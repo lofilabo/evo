@@ -25,7 +25,7 @@ Class DBStart{
     }
 
 	function __construct($database_connection_info) {
-		$this->database_connection_info = $database_connection_info;
+		self::$database_connection_info = $database_connection_info;
 	}
 
     public static function getInstance($database_connection_info): DBStart{
@@ -48,10 +48,10 @@ Class DBStart{
 		certainly not, but lacking an application-wide .env
 		or S{ENV}, we'll do this for now.
 		*/
-		$conn = new mysqli(	$this->database_connection_info['host'], 
-							$this->database_connection_info['username'], 
-							$this->database_connection_info['password'], 
-							$this->database_connection_info['database']  
+		$conn = new mysqli(	self::$database_connection_info['host'], 
+							self::$database_connection_info['username'], 
+							self::$database_connection_info['password'], 
+							self::$database_connection_info['database']  
 		);
 		return $conn;		
 	}

@@ -1,0 +1,86 @@
+<?php
+
+use PHPUnit\Framework\TestCase;
+include '../allclasses.php';
+require_once '../Y_CONFIG/database.php'; 
+
+class Test1 extends TestCase
+{
+
+    public $db  = array(
+        'driver'    => 'mysql',
+        'host'      => 'localhost',     
+        'database'  => 'form_library',  
+        'username'  => '',   
+        'password'  => '',  
+        'charset'   => 'utf8',
+        'collation' => 'utf8_unicode_ci',
+        'prefix'    => ''
+    );
+
+    public function testBasicTableStructure()
+    {
+        $tablename = 'form_submissions';
+        $fm = new FormMaker($this->db);
+        $rez = $fm->get_table_metadata($tablename);
+        //fwrite(STDERR, print_r($rez , TRUE));
+
+        /*
+        Check 2 or 3 values (no use to do all.) to make sure that
+        our library reports table column names where we expect them to be
+        from the database schema
+        */
+        $this->assertSame('first_name', $rez[1][0]);
+        $this->assertSame('gender', $rez[4][0]);
+        $this->assertSame("enum('design','development','optimisation','paid search')", $rez[8][1]);
+    }
+
+    public function testBasicTableInsert(){
+
+            /*
+            Test the functionality which puts data into the database.
+            First, prepare the harness for the stuff_into_table method of FormStuffer
+            */
+            $tablename = 'form_submissions';
+            $fs=new FormStuffer($this->db);
+
+            //prepare array of Good data
+            $intermediatedata1 = array(null,'Richard', 'Amphlett','me@me.com','male','38','',null,null);
+            $rez = $fs->stuff_into_table($tablename,$intermediatedata1);
+            //check that mySQLi returns TRUE
+            $this->assertSame(true, $rez);
+
+            //prepare array where an enum field is asked to swallow a 'bad' value.
+            $intermediatedata2 = array(null,'Richard', 'Amphlett','me@me.com','male','38','',null,'marbles');
+            $rez = $fs->stuff_into_table($tablename,$intermediatedata2);
+            //check that mySQLi DOES NOT return TRUE
+            $this->assertNotSame(true, $rez);
+
+            //repeat, but with a 'good' value.
+            $intermediatedata3 = array(null,'Richard', 'Amphlett','me@me.com','male','38','',null,'development');
+            $rez = $fs->stuff_into_table($tablename,$intermediatedata3);
+            //check that mySQLi returns TRUE
+            $this->assertSame(true, $rez);
+
+            //verify that we are not allowed to force our own ID's; or, rather, that if we try, they
+            //will be ignored and the process will proceed with no hindrance
+            $intermediatedata3 = array(777,'Richard', 'Amphlett','me@me.com','male','38','',null,'development');
+            $rez = $fs->stuff_into_table($tablename,$intermediatedata3);
+            //check that mySQLi returns TRUE
+            $this->assertSame(true, $rez);
+
+            //verify that we will not do lasting harm by passing a nasty bit of SQL
+            $intermediatedata3 = array(null,'Richard', 'Amphlett','me@me.com','male','38','DROP DATABASE form_library;',null,null);
+            $rez = $fs->stuff_into_table($tablename,$intermediatedata3);
+            //and then, any record at all.  If the database HAS been dropped, it will report false
+            $intermediatedata3 = array(null,'Richard', 'Amphlett','me@me.com','male','38','',null,null);
+            $rez = $fs->stuff_into_table($tablename,$intermediatedata3);
+            //check that mySQLi does not return FALSE
+            $this->assertNotSame(false, $rez);
+            //and now, check the table.  Make sure that the text of the query has been saved.
+
+
+
+    }
+
+}
